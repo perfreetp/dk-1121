@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, UserPlus, UserCheck, Settings, BookOpen, Sparkles, Edit3, LogOut, Heart } from 'lucide-react';
+import { ArrowLeft, UserPlus, UserCheck, Settings, BookOpen, Sparkles, Edit3, LogOut, Heart, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { useUserStore } from '@/stores/userStore';
 import { useDreamStore } from '@/stores/dreamStore';
 import DreamCard from '@/components/dream/DreamCard';
@@ -13,12 +13,14 @@ type TabType = 'dreams' | 'relays' | 'references';
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const { currentUser, loadUsers, followUser, unfollowUser, isFollowing, getUserById, logout } = useUserStore();
+  const { currentUser, loadUsers, followUser, unfollowUser, isFollowing, getUserById, logout, addBlockedKeyword, removeBlockedKeyword } = useUserStore();
   const { getDreamsByUser, getDreamsByIds, loadDreams } = useDreamStore();
   const [activeTab, setActiveTab] = useState<TabType>('dreams');
   const [showSettings, setShowSettings] = useState(false);
   const [showEditBio, setShowEditBio] = useState(false);
+  const [showBlockedKeywords, setShowBlockedKeywords] = useState(false);
   const [bio, setBio] = useState('');
+  const [newKeyword, setNewKeyword] = useState('');
 
   useEffect(() => {
     loadUsers();
@@ -28,6 +30,7 @@ const Profile: React.FC = () => {
   const profileUser = userId ? getUserById(userId) : currentUser;
   const isOwnProfile = !userId || userId === currentUser?.id;
   const following = isFollowing(userId || '');
+  const blockedKeywords = currentUser?.settings?.blockedKeywords || [];
 
   const userDreams = profileUser ? getDreamsByUser(profileUser.id) : [];
   const relayDreams = userDreams.filter((d: Dream) => d.relayFromId);
@@ -56,6 +59,16 @@ const Profile: React.FC = () => {
   const handleSaveBio = () => {
     if (!currentUser) return;
     setShowEditBio(false);
+  };
+
+  const handleAddKeyword = () => {
+    if (!newKeyword.trim()) return;
+    addBlockedKeyword(newKeyword.trim());
+    setNewKeyword('');
+  };
+
+  const handleRemoveKeyword = (keyword: string) => {
+    removeBlockedKeyword(keyword);
   };
 
   if (!profileUser) {
@@ -279,6 +292,13 @@ const Profile: React.FC = () => {
             <span>编辑个人简介</span>
           </button>
           <button
+            onClick={() => setShowBlockedKeywords(true)}
+            className="w-full py-3 rounded-xl bg-deep-indigo/30 text-moonlight font-medium hover:bg-deep-indigo/50 transition-colors flex items-center gap-3"
+          >
+            <AlertTriangle size={18} />
+            <span>内容屏蔽设置</span>
+          </button>
+          <button
             onClick={handleLogout}
             className="w-full py-3 rounded-xl bg-red-500/20 text-red-400 font-medium hover:bg-red-500/30 transition-colors flex items-center gap-3"
           >
@@ -303,6 +323,57 @@ const Profile: React.FC = () => {
           >
             保存
           </button>
+        </div>
+      </Modal>
+
+      <Modal isOpen={showBlockedKeywords} onClose={() => setShowBlockedKeywords(false)} title="内容屏蔽设置">
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newKeyword}
+              onChange={(e) => setNewKeyword(e.target.value)}
+              placeholder="输入要屏蔽的关键词"
+              className="flex-1 input-field"
+              onKeyDown={(e) => e.key === 'Enter' && handleAddKeyword()}
+            />
+            <button
+              onClick={handleAddKeyword}
+              disabled={!newKeyword.trim()}
+              className={`px-4 py-2 rounded-xl font-medium transition-colors ${
+                newKeyword.trim()
+                  ? 'bg-dream-purple text-white hover:bg-dream-purple/80'
+                  : 'bg-deep-indigo/30 text-moonlight/40 cursor-not-allowed'
+              }`}
+            >
+              <Plus size={18} />
+            </button>
+          </div>
+
+          {blockedKeywords.length === 0 ? (
+            <p className="text-sm text-moonlight/50 text-center py-4">暂无屏蔽关键词</p>
+          ) : (
+            <div className="space-y-2">
+              {blockedKeywords.map((keyword, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 rounded-xl bg-deep-indigo/30"
+                >
+                  <span className="text-sm text-moonlight">{keyword}</span>
+                  <button
+                    onClick={() => handleRemoveKeyword(keyword)}
+                    className="p-1.5 rounded-lg hover:bg-red-500/20 text-moonlight/40 hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <p className="text-xs text-moonlight/40 text-center">
+            添加关键词后，梦池和搜索结果中将不再显示包含这些词的梦境
+          </p>
         </div>
       </Modal>
     </div>

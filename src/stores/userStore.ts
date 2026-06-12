@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { User, UserSettings } from '@/types';
 import { getStorageData, setStorageData, STORAGE_KEYS } from '@/utils/storage';
-import { generateId } from '@/utils/mockData';
+import { generateId, mockUsers } from '@/utils/mockData';
 
 interface UserStore {
   currentUser: User | null;
@@ -28,8 +28,14 @@ export const useUserStore = create<UserStore>((set, get) => ({
   users: getStorageData<User[]>(STORAGE_KEYS.USERS, []),
 
   loadUsers: () => {
-    const users = getStorageData<User[]>(STORAGE_KEYS.USERS, []);
+    let users = getStorageData<User[]>(STORAGE_KEYS.USERS, []);
     const currentUser = getStorageData<User | null>(STORAGE_KEYS.CURRENT_USER, null);
+    
+    if (users.length === 0) {
+      users = mockUsers;
+      setStorageData(STORAGE_KEYS.USERS, users);
+    }
+    
     set({ users, currentUser });
   },
 

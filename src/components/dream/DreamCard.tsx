@@ -140,6 +140,7 @@ const DreamCard: React.FC<DreamCardProps> = ({ dream, showActions = true }) => {
                   alert('请先登录');
                   return;
                 }
+                navigate(`/publish/${dream.id}`);
               }}
               className="flex items-center gap-1 text-xs text-moonlight/50 hover:text-dream-purple transition-colors"
             >
