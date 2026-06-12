@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-night-bg text-moonlight;
+    font-family: 'Noto Sans SC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(26, 27, 60, 0.3);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(107, 91, 149, 0.5);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 91, 149, 0.8);
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-deep-indigo/50 backdrop-blur-sm rounded-xl p-5;
+    box-shadow: 0 4px 20px rgba(107, 91, 149, 0.15);
+    @apply border border-dream-purple/20;
+    transition: all 0.3s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(107, 91, 149, 0.25);
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 rounded-full font-medium text-white;
+    background: linear-gradient(135deg, #1a1b3c 0%, #6b5b95 100%);
+    box-shadow: 0 4px 15px rgba(107, 91, 149, 0.4);
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    transform: scale(0.95);
+    box-shadow: 0 6px 20px rgba(107, 91, 149, 0.5);
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-full font-medium border border-dream-purple/50 text-dream-purple;
+    transition: all 0.2s ease;
+  }
+
+  .btn-secondary:hover {
+    @apply bg-dream-purple/20;
+    transform: scale(0.95);
+  }
+
+  .tag {
+    @apply px-3 py-1 rounded-full text-xs font-medium;
+    @apply bg-dream-purple/20 text-dream-purple;
+    @apply border border-dream-purple/30;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl bg-deep-indigo/50 border border-dream-purple/30;
+    @apply text-moonlight placeholder-moonlight/50;
+    @apply focus:outline-none focus:border-dream-purple focus:ring-2 focus:ring-dream-purple/30;
+    transition: all 0.2s ease;
+  }
+
+  .nav-item {
+    @apply flex flex-col items-center gap-1 px-4 py-2 rounded-xl;
+    @apply text-moonlight/60 hover:text-moonlight;
+    @apply transition-all duration-200;
+  }
+
+  .nav-item.active {
+    @apply text-dream-purple bg-dream-purple/10;
+  }
+
+  .emotion-bar {
+    @apply h-1.5 rounded-full transition-all duration-300;
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #6b5b95 0%, #ffd700 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .stagger-1 { animation-delay: 100ms; }
+  .stagger-2 { animation-delay: 200ms; }
+  .stagger-3 { animation-delay: 300ms; }
+  .stagger-4 { animation-delay: 400ms; }
+  .stagger-5 { animation-delay: 500ms; }
+}
