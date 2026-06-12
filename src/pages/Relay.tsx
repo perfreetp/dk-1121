@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const Relay: React.FC = () => {
   const navigate = useNavigate();
   const { themes, getTodayTheme, addParticipant, addDreamToTheme } = useThemeStore();
-  const { dreams, addDream, getDreamById } = useDreamStore();
+  const { dreams, addDream, getDreamById, incrementRelayCount } = useDreamStore();
   const { currentUser } = useUserStore();
 
   const [relayContent, setRelayContent] = useState('');
@@ -39,7 +39,6 @@ const Relay: React.FC = () => {
 
   const handleStartRelay = () => {
     if (pickedDreamId) {
-      setSelectedDream(pickedDreamId);
       setShowRelayModal(true);
     }
   };
@@ -57,7 +56,7 @@ const Relay: React.FC = () => {
       category: pickedDream?.category || '奇幻',
       emotionLevel,
       creativeTags,
-      originalDreamId: pickedDreamId || undefined,
+      relayFromId: pickedDreamId || undefined,
       relayCount: 0,
       collectCount: 0,
     });
@@ -65,6 +64,7 @@ const Relay: React.FC = () => {
     if (pickedDreamId) {
       addDreamToTheme(todayTheme.id, pickedDreamId);
       addParticipant(todayTheme.id);
+      incrementRelayCount(pickedDreamId);
     }
 
     setShowRelayModal(false);

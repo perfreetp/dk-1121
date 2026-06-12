@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Layers, Plus, Trash2, Copy, Sparkles, GripVertical, X } from 'lucide-react';
+import { Heart, Layers, Plus, Trash2, Copy, Sparkles, GripVertical, X, RefreshCw } from 'lucide-react';
 import { useCollectionStore } from '@/stores/collectionStore';
 import { useDreamStore } from '@/stores/dreamStore';
 import DreamCard from '@/components/dream/DreamCard';
@@ -11,7 +11,7 @@ type TabType = 'collected' | 'lists' | 'drafts';
 
 const Collection: React.FC = () => {
   const navigate = useNavigate();
-  const { collections, drafts, inspirationLists, loadData, removeFromCollection, createDraft, deleteDraft, deleteInspirationList } = useCollectionStore();
+  const { collections, drafts, inspirationLists, loadData, removeFromCollection, createDraft, deleteDraft, deleteInspirationList, generateInspirationLists } = useCollectionStore();
   const { getDreamById, loadDreams } = useDreamStore();
   const [activeTab, setActiveTab] = useState<TabType>('collected');
   const [showNewDraft, setShowNewDraft] = useState(false);
@@ -57,6 +57,14 @@ const Collection: React.FC = () => {
     setSelectedDreamsForDraft([]);
     setShowNewDraft(false);
     setActiveTab('drafts');
+  };
+
+  const handleGenerateLists = () => {
+    if (collectedDreams.length === 0) {
+      alert('请先收藏一些梦境');
+      return;
+    }
+    generateInspirationLists(collectedDreams);
   };
 
   const handleCopyDraft = (content: string) => {
@@ -137,32 +145,41 @@ const Collection: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                Object.entries(getGroupedDreams()).map(([category, dreams]) => (
-                  <div key={category}>
-                    <h3 className="text-sm font-medium text-moonlight/60 mb-3">{category}</h3>
-                    <div className="space-y-3">
-                      {dreams.map((dream) => dream && (
-                        <div key={dream.id} className="relative group">
-                          <DreamCard dream={dream} showActions={false} />
-                          <button
-                            onClick={() => {
-                              removeFromCollection(dream.id);
-                            }}
-                            className="absolute top-3 right-3 p-2 rounded-lg bg-red-500/20 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/30"
-                          >
-                            <X size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleAddToDraft(dream.id)}
-                            className="absolute top-3 right-12 p-2 rounded-lg bg-star-gold/20 text-star-gold opacity-0 group-hover:opacity-100 transition-opacity hover:bg-star-gold/30"
-                          >
-                            <Plus size={16} />
-                          </button>
-                        </div>
-                      ))}
+                <>
+                  <button
+                    onClick={handleGenerateLists}
+                    className="w-full py-3 rounded-xl bg-star-gold/20 text-star-gold font-medium hover:bg-star-gold/30 transition-colors border border-star-gold/30 flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw size={18} />
+                    <span>按分类生成灵感清单</span>
+                  </button>
+                  {Object.entries(getGroupedDreams()).map(([category, dreams]) => (
+                    <div key={category}>
+                      <h3 className="text-sm font-medium text-moonlight/60 mb-3">{category}</h3>
+                      <div className="space-y-3">
+                        {dreams.map((dream) => dream && (
+                          <div key={dream.id} className="relative group">
+                            <DreamCard dream={dream} showActions={false} />
+                            <button
+                              onClick={() => {
+                                removeFromCollection(dream.id);
+                              }}
+                              className="absolute top-3 right-3 p-2 rounded-lg bg-red-500/20 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/30"
+                            >
+                              <X size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleAddToDraft(dream.id)}
+                              className="absolute top-3 right-12 p-2 rounded-lg bg-star-gold/20 text-star-gold opacity-0 group-hover:opacity-100 transition-opacity hover:bg-star-gold/30"
+                            >
+                              <Plus size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </>
               )}
             </motion.div>
           )}
@@ -179,7 +196,16 @@ const Collection: React.FC = () => {
                 <div className="text-center py-12">
                   <Sparkles size={48} className="mx-auto text-moonlight/20 mb-4" />
                   <p className="text-moonlight/50">还没有灵感清单</p>
-                  <p className="text-moonlight/30 text-sm mt-1">收藏梦境后可以自动生成灵感清单</p>
+                  <p className="text-moonlight/30 text-sm mt-1">收藏梦境后可以生成灵感清单</p>
+                  {collectedDreams.length > 0 && (
+                    <button
+                      onClick={handleGenerateLists}
+                      className="mt-4 btn-primary"
+                    >
+                      <Sparkles size={18} className="inline mr-2" />
+                      生成灵感清单
+                    </button>
+                  )}
                 </div>
               ) : (
                 inspirationLists.map((list) => (
@@ -202,6 +228,11 @@ const Collection: React.FC = () => {
                           {dream.content}
                         </p>
                       ))}
+                      {list.dreams.length > 3 && (
+                        <p className="text-xs text-moonlight/40 text-center">
+                          还有 {list.dreams.length - 3} 条...
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))

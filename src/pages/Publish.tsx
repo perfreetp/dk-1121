@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, AlertCircle, Eye, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Send, AlertCircle, Eye, Sparkles, MessageCircle } from 'lucide-react';
 import { useDreamStore } from '@/stores/dreamStore';
 import { useUserStore } from '@/stores/userStore';
-import { CATEGORIES, CREATIVE_TAGS, DreamCategory, CreativeTag, EmotionLevel } from '@/types';
+import { CATEGORIES, CREATIVE_TAGS, DreamCategory, CreativeTag, EmotionLevel, Dream } from '@/types';
 import { desensitizeDream, validateDreamContent } from '@/utils/desensitize';
 import EmotionSlider from '@/components/dream/EmotionSlider';
 import TagSelector from '@/components/common/TagSelector';
@@ -12,8 +12,10 @@ import { motion } from 'framer-motion';
 
 const Publish: React.FC = () => {
   const navigate = useNavigate();
-  const { addDream } = useDreamStore();
-  const { currentUser, isLoggedIn, incrementPublishCount, login } = useUserStore();
+  const { relayFromId } = useParams<{ relayFromId?: string }>();
+  const { addDream, getDreamById, incrementRelayCount, loadDreams } = useDreamStore();
+  const { currentUser, login, incrementReferenceCount, addReference } = useUserStore();
+  const isLoggedIn = !!currentUser;
 
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<DreamCategory>('奇幻');
@@ -23,6 +25,18 @@ const Publish: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [nickname, setNickname] = useState('');
+  const [originalDream, setOriginalDream] = useState<Dream | null>(null);
+
+  useEffect(() => {
+    loadDreams();
+    if (relayFromId) {
+      const dream = getDreamById(relayFromId);
+      if (dream) {
+        setOriginalDream(dream);
+        setCategory(dream.category);
+      }
+    }
+  }, [relayFromId]);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
@@ -50,7 +64,7 @@ const Publish: React.FC = () => {
 
     const { desensitized } = desensitizeDream(content);
 
-    addDream({
+    const newDream = {
       userId: currentUser!.id,
       userNickname: currentUser!.nickname,
       content: desensitized,
@@ -59,9 +73,17 @@ const Publish: React.FC = () => {
       creativeTags,
       relayCount: 0,
       collectCount: 0,
-    });
+      relayFromId: relayFromId || undefined,
+    };
 
-    incrementPublishCount();
+    const dreamId = addDream(newDream);
+
+    if (relayFromId && originalDream) {
+      incrementRelayCount(relayFromId);
+      incrementReferenceCount(originalDream.userId);
+      addReference(originalDream.userId, dreamId);
+    }
+
     navigate('/');
   };
 
@@ -87,7 +109,9 @@ const Publish: React.FC = () => {
             >
               <ArrowLeft size={22} className="text-moonlight" />
             </button>
-            <h1 className="text-lg font-semibold text-moonlight">发布梦境</h1>
+            <h1 className="text-lg font-semibold text-moonlight">
+              {relayFromId ? '续写梦境' : '发布梦境'}
+            </h1>
             <button
               onClick={() => setShowPreview(true)}
               className="p-2 -mr-2 rounded-xl hover:bg-dream-purple/20 transition-colors"
@@ -97,6 +121,21 @@ const Publish: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {originalDream && (
+        <div className="border-b border-dream-purple/10">
+          <div className="max-w-lg mx-auto px-4 py-4">
+            <div className="p-4 rounded-xl bg-dream-purple/10 border border-dream-purple/20">
+              <div className="flex items-center gap-2 mb-2">
+                <MessageCircle size={16} className="text-dream-purple" />
+                <span className="text-sm font-medium text-dream-purple">基于此梦境续写</span>
+              </div>
+              <p className="text-sm text-moonlight/80 line-clamp-3">{originalDream.content}</p>
+              <p className="text-xs text-moonlight/50 mt-2">@{originalDream.userNickname}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
         <section>
@@ -109,7 +148,10 @@ const Publish: React.FC = () => {
           <textarea
             value={content}
             onChange={handleContentChange}
-            placeholder="描述你的梦境片段...&#10;&#10;建议：&#10;• 描述具体的场景和感受&#10;• 保留独特有趣的细节&#10;• 可以适当模糊真实信息"
+            placeholder={relayFromId 
+              ? '继续书写这个梦境的后续...'
+              : '描述你的梦境片段...\n\n建议：\n• 描述具体的场景和感受\n• 保留独特有趣的细节\n• 可以适当模糊真实信息'
+            }
             className="input-field min-h-[200px] resize-none leading-relaxed"
             maxLength={500}
           />
@@ -178,7 +220,7 @@ const Publish: React.FC = () => {
             }`}
           >
             <Send size={20} />
-            {isLoggedIn ? '发布梦境' : '登录后发布'}
+            {isLoggedIn ? (relayFromId ? '发布续写' : '发布梦境') : '登录后发布'}
           </button>
         </div>
       </main>

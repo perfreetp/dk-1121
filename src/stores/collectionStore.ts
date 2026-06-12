@@ -3,6 +3,8 @@ import { Collection, InspirationList, CreativeDraft } from '@/types';
 import { getStorageData, setStorageData, STORAGE_KEYS } from '@/utils/storage';
 import { generateId } from '@/utils/mockData';
 
+const INSPIRATION_LISTS_KEY = 'dream_exchange_inspiration_lists';
+
 interface CollectionStore {
   collections: Collection[];
   inspirationLists: InspirationList[];
@@ -14,6 +16,7 @@ interface CollectionStore {
   isCollected: (dreamId: string) => boolean;
   getCollectionById: (id: string) => Collection | undefined;
   createInspirationList: (title: string, dreams: any[], tags: string[]) => void;
+  generateInspirationLists: (dreams: any[]) => void;
   createDraft: (title: string, content: string, dreamIds: string[]) => void;
   updateDraft: (id: string, updates: Partial<CreativeDraft>) => void;
   deleteDraft: (id: string) => void;
@@ -22,7 +25,7 @@ interface CollectionStore {
 
 export const useCollectionStore = create<CollectionStore>((set, get) => ({
   collections: getStorageData<Collection[]>(STORAGE_KEYS.COLLECTIONS, []),
-  inspirationLists: [],
+  inspirationLists: getStorageData<InspirationList[]>(INSPIRATION_LISTS_KEY, []),
   drafts: getStorageData<CreativeDraft[]>(STORAGE_KEYS.DRAFTS, []),
   collectedDreamIds: new Set(
     getStorageData<Collection[]>(STORAGE_KEYS.COLLECTIONS, []).flatMap((c) => c.dreamIds)
@@ -31,9 +34,11 @@ export const useCollectionStore = create<CollectionStore>((set, get) => ({
   loadData: () => {
     const collections = getStorageData<Collection[]>(STORAGE_KEYS.COLLECTIONS, []);
     const drafts = getStorageData<CreativeDraft[]>(STORAGE_KEYS.DRAFTS, []);
+    const inspirationLists = getStorageData<InspirationList[]>(INSPIRATION_LISTS_KEY, []);
     set({
       collections,
       drafts,
+      inspirationLists,
       collectedDreamIds: new Set(collections.flatMap((c) => c.dreamIds)),
     });
   },
@@ -96,7 +101,32 @@ export const useCollectionStore = create<CollectionStore>((set, get) => ({
       tags,
       createdAt: new Date(),
     };
-    set({ inspirationLists: [...get().inspirationLists, newList] });
+    const updated = [...get().inspirationLists, newList];
+    setStorageData(INSPIRATION_LISTS_KEY, updated);
+    set({ inspirationLists: updated });
+  },
+
+  generateInspirationLists: (dreams) => {
+    const groupedByCategory: Record<string, typeof dreams> = {};
+    
+    dreams.forEach((dream) => {
+      if (!groupedByCategory[dream.category]) {
+        groupedByCategory[dream.category] = [];
+      }
+      groupedByCategory[dream.category].push(dream);
+    });
+
+    const lists: InspirationList[] = Object.entries(groupedByCategory).map(([category, categoryDreams]) => ({
+      id: generateId(),
+      userId: 'current',
+      title: `${category}灵感集`,
+      dreams: categoryDreams,
+      tags: [...new Set(categoryDreams.flatMap(d => d.creativeTags))],
+      createdAt: new Date(),
+    }));
+
+    setStorageData(INSPIRATION_LISTS_KEY, lists);
+    set({ inspirationLists: lists });
   },
 
   createDraft: (title, content, dreamIds) => {
@@ -128,8 +158,8 @@ export const useCollectionStore = create<CollectionStore>((set, get) => ({
   },
 
   deleteInspirationList: (id) => {
-    set({
-      inspirationLists: get().inspirationLists.filter((l) => l.id !== id),
-    });
+    const updated = get().inspirationLists.filter((l) => l.id !== id);
+    setStorageData(INSPIRATION_LISTS_KEY, updated);
+    set({ inspirationLists: updated });
   },
 }));

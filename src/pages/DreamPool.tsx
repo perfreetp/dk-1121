@@ -3,6 +3,7 @@ import { Search, Sparkles } from 'lucide-react';
 import { useDreamStore } from '@/stores/dreamStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { useCollectionStore } from '@/stores/collectionStore';
+import { useUserStore } from '@/stores/userStore';
 import DreamCard from '@/components/dream/DreamCard';
 import CategoryFilter from '@/components/dream/CategoryFilter';
 import ThemeCard from '@/components/relay/ThemeCard';
@@ -12,6 +13,7 @@ const DreamPool: React.FC = () => {
   const { getFilteredDreams, setFilter, currentFilter, loadDreams } = useDreamStore();
   const { getTodayTheme, loadThemes } = useThemeStore();
   const { loadData } = useCollectionStore();
+  const { currentUser } = useUserStore();
   const [searchValue, setSearchValue] = useState('');
   const [mounted, setMounted] = useState(false);
 
@@ -21,6 +23,11 @@ const DreamPool: React.FC = () => {
     loadData();
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const blockedKeywords = currentUser?.settings?.blockedKeywords || [];
+    setFilter({ ...currentFilter, blockedKeywords });
+  }, [currentUser?.settings?.blockedKeywords]);
 
   const filteredDreams = getFilteredDreams();
   const todayTheme = getTodayTheme();

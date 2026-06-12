@@ -18,15 +18,22 @@ export type CreativeTag =
 
 export type EmotionLevel = 1 | 2 | 3 | 4 | 5;
 
+export interface UserSettings {
+  blockedKeywords: string[];
+  privacyLevel: 'anonymous' | 'public';
+  notificationEnabled: boolean;
+}
+
 export interface User {
   id: string;
   nickname: string;
   avatar: string;
-  publishCount: number;
-  citedCount: number;
-  followers: number;
-  following: number;
-  blockedKeywords: string[];
+  bio: string;
+  following: string[];
+  followers: string[];
+  referenceCount: number;
+  references: string[];
+  settings: UserSettings;
   createdAt: Date;
 }
 
@@ -38,7 +45,7 @@ export interface Dream {
   category: DreamCategory;
   emotionLevel: EmotionLevel;
   creativeTags: CreativeTag[];
-  originalDreamId?: string;
+  relayFromId?: string;
   relayCount: number;
   collectCount: number;
   createdAt: Date;

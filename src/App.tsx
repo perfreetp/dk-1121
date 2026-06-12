@@ -14,9 +14,11 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<DreamPool />} />
           <Route path="/publish" element={<Publish />} />
+          <Route path="/publish/:relayFromId" element={<Publish />} />
           <Route path="/relay" element={<Relay />} />
           <Route path="/collection" element={<Collection />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:userId" element={<Profile />} />
         </Routes>
         <Navigation />
       </div>

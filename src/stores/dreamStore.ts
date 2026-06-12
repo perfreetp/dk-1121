@@ -7,21 +7,25 @@ interface DreamFilter {
   category?: DreamCategory;
   emotionLevel?: EmotionLevel;
   searchKeyword?: string;
+  blockedKeywords?: string[];
 }
 
 interface DreamStore {
   dreams: Dream[];
   currentFilter: DreamFilter;
   loadDreams: () => void;
-  addDream: (dream: Omit<Dream, 'id' | 'createdAt'>) => void;
+  addDream: (dream: Omit<Dream, 'id' | 'createdAt'>) => string;
   removeDream: (id: string) => void;
   updateDream: (id: string, updates: Partial<Dream>) => void;
   setFilter: (filter: DreamFilter) => void;
   getFilteredDreams: () => Dream[];
   getDreamById: (id: string) => Dream | undefined;
+  getDreamsByUser: (userId: string) => Dream[];
+  getDreamsByIds: (ids: string[]) => Dream[];
   incrementCollectCount: (id: string) => void;
   decrementCollectCount: (id: string) => void;
   incrementRelayCount: (id: string) => void;
+  getCitedDreamsByUserId: (userId: string) => Dream[];
 }
 
 export const useDreamStore = create<DreamStore>((set, get) => ({
@@ -47,6 +51,7 @@ export const useDreamStore = create<DreamStore>((set, get) => ({
     const updated = [newDream, ...get().dreams];
     setStorageData(STORAGE_KEYS.DREAMS, updated);
     set({ dreams: updated });
+    return newDream.id;
   },
 
   removeDream: (id) => {
@@ -83,12 +88,28 @@ export const useDreamStore = create<DreamStore>((set, get) => ({
           dream.userNickname.toLowerCase().includes(keyword)
         );
       }
+      if (currentFilter.blockedKeywords && currentFilter.blockedKeywords.length > 0) {
+        const content = dream.content.toLowerCase();
+        for (const keyword of currentFilter.blockedKeywords) {
+          if (content.includes(keyword.toLowerCase())) {
+            return false;
+          }
+        }
+      }
       return true;
     });
   },
 
   getDreamById: (id) => {
     return get().dreams.find((d) => d.id === id);
+  },
+
+  getDreamsByUser: (userId) => {
+    return get().dreams.filter((d) => d.userId === userId);
+  },
+
+  getDreamsByIds: (ids) => {
+    return get().dreams.filter((d) => ids.includes(d.id));
   },
 
   incrementCollectCount: (id) => {
@@ -110,5 +131,13 @@ export const useDreamStore = create<DreamStore>((set, get) => ({
     if (dream) {
       get().updateDream(id, { relayCount: dream.relayCount + 1 });
     }
+  },
+
+  getCitedDreamsByUserId: (userId) => {
+    return get().dreams.filter((dream) => {
+      if (!dream.relayFromId) return false;
+      const originalDream = get().getDreamById(dream.relayFromId);
+      return originalDream?.userId === userId;
+    });
   },
 }));
